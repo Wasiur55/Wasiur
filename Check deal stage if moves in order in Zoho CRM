@@ -1,0 +1,62 @@
+drec = zoho.crm.getRecordById("Deals",dId);
+cstage = drec.get("Stage");
+dtype = drec.get("Mortgage_Type1");
+initial_stagescore = ifnull(drec.get("Stage_Score"),0);
+info initial_stagescore;
+stagescore = initial_stagescore;
+//info cstage;
+Purchaseorder = {"Starting Your Journey","Planning Your Mortgage","Homebrowsing with Confidence","Offer Accepted- Toward the Mortgage Commitment","Satisfying Conditions","Bringing Everything Together","Mortgage Completed"};
+Refinorder = {"Starting Your Journey","Planning To Refinance","Working Toward a Commitment","Satisfying Conditions","Bringing Everything Together","Mortgage Completed"};
+stageurl = "https://www.zohoapis.com/crm/v3/Deals/" + dId + "/Stage_History?fields=Stage";
+resp = invokeurl
+[
+	url :stageurl
+	type :GET
+	connection:"zohocrmallmodule"
+];
+info resp;
+//stagelist = resp.get("data").get(3).get("Stage");
+//stagelist = resp.get("data");
+//info stagelist;
+currentstage = resp.get("data").get(0).get("Stage");
+info currentstage;
+prevstage = resp.get("data").get(1).get("Stage");
+info prevstage;
+//curind= Purchaseorder.indexOf(currentstageid);
+if(dtype == "Refinancing")
+{
+	curind = Refinorder.indexOf(currentstage);
+	//info curind;
+	info "Cur ind:" + curind;
+	if(Refinorder.get(curind - 1) == prevstage)
+	{
+		info "current stage=" + currentstage + "Previous stage:" + prevstage;
+		stagescore = initial_stagescore + 1;
+	}
+	else
+	{
+		info "Previous not matched";
+	}
+}
+if(dtype == "Home or Property Purchase")
+{
+	curind = Purchaseorder.indexOf(currentstage);
+	//info curind;
+	info "Cur ind:" + curind;
+	if(Purchaseorder.get(curind - 1) == prevstage)
+	{
+		info "current stage=" + currentstage + "Previous stage:" + prevstage;
+		stagescore = initial_stagescore + 1;
+	}
+	else
+	{
+		info "Previous not matched";
+	}
+}
+info "Final score:" + stagescore;
+if(stagescore != initial_stagescore)
+{
+	updatedscore = Map();
+	updatedscore.put("Stage_Score",stagescore);
+	updateres = zoho.crm.updateRecord("Deals",dId,updatedscore);
+}
